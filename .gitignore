@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Secrets: never commit real env files. The *.example files ARE committed.
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+.DS_Store
+*.log
+
+# Old demo database from the insecure prototype (never commit data files)
+*.db
+legacy/
