@@ -8,7 +8,6 @@ import {
   Banknote,
   BarChart3,
   Settings,
-  HelpCircle,
   Wallet,
 } from 'lucide-react'
 
@@ -59,13 +58,7 @@ export default function Sidebar() {
 
       <div className="space-y-1 pt-4 border-t border-navy-100 dark:border-navy-800">
         <NavItem to="/settings" label="Settings" icon={Settings} />
-        <a
-          href="#help"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-navy-600 hover:bg-navy-100 hover:text-navy-900 transition-colors focus-ring dark:text-navy-300 dark:hover:bg-navy-800 dark:hover:text-white"
-        >
-          <HelpCircle size={18} strokeWidth={2} />
-          Help
-        </a>
+        
       </div>
     </aside>
   )
