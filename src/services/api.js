@@ -1,8 +1,7 @@
 
-// The ONLY place the frontend talks to the backend.
-// - Base URL comes from VITE_API_URL (see .env.local.example).
-// - credentials: 'include' makes the browser send the HTTP-only login cookie.
-// - Server field names are converted to the names the existing components use.
+ // The ONLY place the frontend talks to the backend.
+ // credentials: 'include' sends the HTTP-only login cookie.
+ // Server field names are converted to the names existing components use.
 
 const API_BASE = (
   import.meta.env.VITE_API_URL ||
@@ -44,7 +43,6 @@ async function request(method, path, body) {
   const json = await res.json().catch(() => null)
 
   if (!res.ok) {
-    // A 401 on a normal data request means the session ended.
     if (res.status === 401 && !path.startsWith('/auth/')) {
       window.dispatchEvent(new Event('ff:unauthorized'))
     }
@@ -110,8 +108,6 @@ const fromTransaction = (t) => ({
   type: t.type,
   amount: t.amount,
   notes: t.notes || '',
-
-  // Preserve the transaction's saved budget-inclusion setting.
   includeInBudget: t.includeInBudget !== false,
 })
 
@@ -158,8 +154,6 @@ const toTransactionBody = (t) => ({
   notes: t.notes || '',
   date: t.date,
   accountId: t.accountId,
-
-  // Send the budget toggle state to the backend.
   includeInBudget: t.includeInBudget !== false,
 })
 
@@ -366,3 +360,23 @@ export async function fetchFinanceData() {
     analytics,
   }
 }
+
+// ---------- investments ----------
+
+export const getInvestments = (type) => {
+  const query = type
+    ? `?type=${encodeURIComponent(type)}`
+    : ''
+
+  return request('GET', `/investments${query}`)
+}
+
+export const createInvestment = (investment) =>
+  request('POST', '/investments', investment)
+
+export const updateInvestment = (id, investment) =>
+  request('PUT', `/investments/${id}`, investment)
+
+export const deleteInvestment = (id) =>
+  request('DELETE', `/investments/${id}`)
+

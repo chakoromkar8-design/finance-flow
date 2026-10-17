@@ -1,6 +1,4 @@
 // FinanceFlow database schema (PostgreSQL via Prisma).
-// Money uses Decimal(14,2) (exact, no floating point drift). Dates that are
-// "calendar days" (transaction date, EMI due date...) use @db.Date.
 
 generator client {
   provider = "prisma-client-js"
@@ -35,6 +33,23 @@ enum EmiStatus {
   PAID
 }
 
+enum InvestmentType {
+  SHARES
+  MUTUAL_FUND
+  SIP
+  BOND
+  FD
+  COMMODITY
+  LIC
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  COMPLETED
+  MATURED
+  CANCELLED
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -49,6 +64,7 @@ model User {
   goals        Goal[]
   loans        Loan[]
   emis         Emi[]
+  investments  Investment[]
 }
 
 model Account {
@@ -57,8 +73,6 @@ model Account {
   name           String
   type           AccountType
   institution    String?
-  // Balance at the moment the account was added. The live balance is
-  // computed as openingBalance + income - expenses (see server/services/balances.js).
   openingBalance Decimal     @default(0) @db.Decimal(14, 2)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -85,7 +99,6 @@ model Transaction {
   updatedAt       DateTime        @updatedAt
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // Restrict: an account that still has transactions cannot be deleted by accident.
   account Account @relation(fields: [accountId], references: [id], onDelete: Restrict)
 
   @@index([userId, date])
@@ -97,7 +110,6 @@ model Budget {
   id        String   @id @default(cuid())
   userId    String
   category  String
-  // Monthly limit. "Spent" is NOT stored: it is computed from transactions.
   amount    Decimal  @db.Decimal(14, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -130,7 +142,7 @@ model Loan {
   name              String
   principalAmount   Decimal    @db.Decimal(14, 2)
   outstandingAmount Decimal    @db.Decimal(14, 2)
-  interestRate      Decimal    @db.Decimal(5, 2) // annual %, e.g. 8.50
+  interestRate      Decimal    @db.Decimal(5, 2)
   emiAmount         Decimal    @db.Decimal(14, 2)
   startDate         DateTime   @db.Date
   endDate           DateTime?  @db.Date
@@ -152,8 +164,6 @@ model Emi {
   dueDate       DateTime  @db.Date
   status        EmiStatus @default(PENDING)
   paidDate      DateTime? @db.Date
-  // How much of this EMI reduced the loan principal when it was marked paid
-  // (kept so un-paying restores the exact outstanding amount).
   principalPaid Decimal?  @db.Decimal(14, 2)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -163,4 +173,46 @@ model Emi {
 
   @@index([userId, dueDate])
   @@index([loanId])
+}
+
+model Investment {
+  id     String           @id @default(cuid())
+  userId String
+  type   InvestmentType
+  name   String
+  status InvestmentStatus @default(ACTIVE)
+
+  institution  String?
+  symbol       String?
+  policyNumber String?
+
+  investedAmount Decimal @default(0) @db.Decimal(14, 2)
+  currentValue   Decimal @default(0) @db.Decimal(14, 2)
+
+  quantity      Decimal? @db.Decimal(18, 6)
+  purchasePrice Decimal? @db.Decimal(14, 4)
+  currentPrice  Decimal? @db.Decimal(14, 4)
+  units         Decimal? @db.Decimal(18, 6)
+  purchaseNav   Decimal? @db.Decimal(14, 4)
+  currentNav    Decimal? @db.Decimal(14, 4)
+
+  monthlyAmount   Decimal?  @db.Decimal(14, 2)
+  startDate       DateTime? @db.Date
+  nextPaymentDate DateTime? @db.Date
+
+  interestRate Decimal?  @db.Decimal(5, 2)
+  maturityDate DateTime? @db.Date
+
+  premiumAmount    Decimal?  @db.Decimal(14, 2)
+  premiumFrequency String?
+  nextPremiumDate  DateTime? @db.Date
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([userId, status])
 }
