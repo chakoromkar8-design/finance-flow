@@ -1,11 +1,10 @@
-import { Trash2, Pencil } from 'lucide-react'
+import { Pencil, ToggleRight, ToggleLeft, Receipt } from 'lucide-react'
 import { getCategoryIcon } from '../../utils/categoryIcons.js'
 import { formatCurrency, formatDate } from '../../utils/format.js'
 import Badge from '../common/Badge.jsx'
 import EmptyState from '../common/EmptyState.jsx'
-import { Receipt } from 'lucide-react'
 
-export default function TransactionTable({ transactions, onDelete, onEdit }) {
+export default function TransactionTable({ transactions, onToggleBudget, onEdit }) {
   if (transactions.length === 0) {
     return (
       <EmptyState
@@ -71,11 +70,13 @@ export default function TransactionTable({ transactions, onDelete, onEdit }) {
                       <Pencil size={15} />
                     </button>
                     <button
-                      onClick={() => onDelete(tx)}
-                      className="text-navy-400 hover:text-expense-500 rounded-lg p-1.5 focus-ring"
-                      aria-label={`Delete ${tx.name}`}
+                      onClick={() => onToggleBudget(tx)}
+                      className={`rounded-lg p-1.5 focus-ring transition-colors ${
+                        tx.includeInBudget !== false ? 'text-brand-500 hover:text-brand-600' : 'text-navy-400 hover:text-navy-500'
+                      }`}
+                      aria-label={tx.includeInBudget !== false ? `Exclude ${tx.name} from budget` : `Include ${tx.name} in budget`}
                     >
-                      <Trash2 size={15} />
+                      {tx.includeInBudget !== false ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                     </button>
                   </td>
                 </tr>
@@ -103,20 +104,22 @@ export default function TransactionTable({ transactions, onDelete, onEdit }) {
                   </div>
                 </div>
                 <div className="flex shrink-0">
-                <button
-                  onClick={() => onEdit(tx)}
-                  className="text-navy-400 hover:text-brand-600 rounded-lg p-1.5 focus-ring"
-                  aria-label={`Edit ${tx.name}`}
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  onClick={() => onDelete(tx)}
-                  className="text-navy-400 hover:text-expense-500 rounded-lg p-1.5 focus-ring"
-                  aria-label={`Delete ${tx.name}`}
-                >
-                  <Trash2 size={15} />
-                </button>
+                  <button
+                    onClick={() => onEdit(tx)}
+                    className="text-navy-400 hover:text-brand-600 rounded-lg p-1.5 focus-ring"
+                    aria-label={`Edit ${tx.name}`}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => onToggleBudget(tx)}
+                    className={`rounded-lg p-1.5 focus-ring transition-colors ${
+                      tx.includeInBudget !== false ? 'text-brand-500 hover:text-brand-600' : 'text-navy-400 hover:text-navy-500'
+                    }`}
+                    aria-label={tx.includeInBudget !== false ? `Exclude ${tx.name} from budget` : `Include ${tx.name} in budget`}
+                  >
+                    {tx.includeInBudget !== false ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                  </button>
                 </div>
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-navy-100 dark:border-navy-700/60">

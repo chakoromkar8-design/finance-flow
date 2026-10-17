@@ -17,6 +17,7 @@ export function serializeTransaction(t, accountNames) {
     description: t.description,
     notes: t.notes ?? null,
     date: dayString(t.date),
+    includeInBudget: t.includeInBudget, 
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   }
@@ -109,6 +110,13 @@ export function transactionRoutes({ prisma }) {
       .optionalString('notes', { max: 500 })
       .date('date')
       .id('accountId')
+    
+    const rawData = req.body ?? {};
+    let includeInBudget = true;
+    if (typeof rawData.includeInBudget === 'boolean') {
+        includeInBudget = rawData.includeInBudget;
+    }
+    
     const data = v.done()
 
     checkCategory(data.type, data.category)
@@ -124,6 +132,7 @@ export function transactionRoutes({ prisma }) {
         description: data.description,
         notes: data.notes ?? null,
         date: data.date,
+        includeInBudget: includeInBudget, 
       },
     })
     res.status(201).json({ data: serializeTransaction(created, await accountNameMap(prisma, req.user.id)) })
@@ -143,6 +152,11 @@ export function transactionRoutes({ prisma }) {
       .date('date')
       .id('accountId')
     const data = v.done()
+
+    const rawData = req.body ?? {};
+    if (typeof rawData.includeInBudget === 'boolean') {
+        data.includeInBudget = rawData.includeInBudget;
+    }
 
     checkCategory(data.type ?? existing.type, data.category ?? existing.category)
     if (data.accountId && data.accountId !== existing.accountId) await assertOwnAccount(prisma, req.user.id, data.accountId)

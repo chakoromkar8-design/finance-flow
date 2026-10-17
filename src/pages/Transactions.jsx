@@ -6,17 +6,14 @@ import Button from '../components/common/Button.jsx'
 import TransactionFilters from '../components/transactions/TransactionFilters.jsx'
 import TransactionTable from '../components/transactions/TransactionTable.jsx'
 import TransactionModal from '../components/transactions/TransactionModal.jsx'
-import ConfirmDialog from '../components/common/ConfirmDialog.jsx'
 
 const PAGE_SIZE = 6
 
 export default function Transactions() {
-  const { transactions, accounts, deleteTransaction } = useFinance()
+  const { transactions, accounts, updateTransaction } = useFinance()
   const { notify } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [toDelete, setToDelete] = useState(null)
-  const [deleting, setDeleting] = useState(false)
   const [page, setPage] = useState(1)
   const [filters, setFilters] = useState({
     search: '',
@@ -28,7 +25,7 @@ export default function Transactions() {
 
   const filtered = useMemo(() => {
     let list = transactions.filter((tx) => {
-      if (filters.search && !tx.name.toLowerCase().includes(filters.search.toLowerCase())) return false
+      if (filters.search && !tx.name?.toLowerCase().includes(filters.search.toLowerCase())) return false
       if (filters.type !== 'all' && tx.type !== filters.type) return false
       if (filters.category !== 'all' && tx.category !== filters.category) return false
       if (filters.account !== 'all' && tx.accountId !== filters.account) return false
@@ -62,16 +59,17 @@ export default function Transactions() {
     setEditing(tx)
     setModalOpen(true)
   }
-  const confirmDelete = async () => {
-    setDeleting(true)
+
+  const handleToggleBudget = async (tx) => {
+    // Evaluate based on the current UI state, forcing it to flip
+    const isIncluded = tx.includeInBudget !== false;
+    const nextStatus = !isIncluded;
+    
     try {
-      await deleteTransaction(toDelete.id)
-      notify('Transaction deleted successfully.', 'success')
-      setToDelete(null)
+      await updateTransaction(tx.id, { ...tx, includeInBudget: nextStatus })
+      notify(`Transaction ${nextStatus ? 'included in' : 'excluded from'} budget.`, 'success')
     } catch (err) {
-      notify(err.message || 'Unable to delete the transaction.', 'error')
-    } finally {
-      setDeleting(false)
+      notify(err.message || 'Unable to update transaction.', 'error')
     }
   }
 
@@ -91,7 +89,7 @@ export default function Transactions() {
 
       <div className="card p-5 sm:p-6 space-y-5">
         <TransactionFilters filters={filters} setFilters={handleFilters} accounts={accounts} />
-        <TransactionTable transactions={paginated} onDelete={setToDelete} onEdit={openEdit} />
+        <TransactionTable transactions={paginated} onEdit={openEdit} onToggleBudget={handleToggleBudget} />
 
         {filtered.length > 0 && (
           <div className="flex items-center justify-between pt-2 border-t border-navy-100 dark:border-navy-700/60 text-sm">
@@ -124,14 +122,6 @@ export default function Transactions() {
       </div>
 
       <TransactionModal open={modalOpen} onClose={() => setModalOpen(false)} transaction={editing} />
-      <ConfirmDialog
-        open={Boolean(toDelete)}
-        title="Delete transaction?"
-        message={toDelete ? `“${toDelete.name}” will be removed and your balances and charts will update.` : ''}
-        busy={deleting}
-        onConfirm={confirmDelete}
-        onCancel={() => setToDelete(null)}
-      />
     </div>
   )
 }

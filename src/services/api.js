@@ -1,11 +1,14 @@
+
 // The ONLY place the frontend talks to the backend.
 // - Base URL comes from VITE_API_URL (see .env.local.example).
-// - `credentials: 'include'` makes the browser send the HTTP-only login cookie.
-// - Server field names are converted to the names the existing components use
-//   (see the "normalizers" section), so the UI did not need to be redesigned.
+// - credentials: 'include' makes the browser send the HTTP-only login cookie.
+// - Server field names are converted to the names the existing components use.
 
 const API_BASE = (
-  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api')
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? 'http://localhost:3001/api'
+    : '/api')
 ).replace(/\/$/, '')
 
 export class ApiError extends Error {
@@ -20,28 +23,49 @@ export class ApiError extends Error {
 
 async function request(method, path, body) {
   let res
+
   try {
     res = await fetch(`${API_BASE}${path}`, {
       method,
       credentials: 'include',
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      headers:
+        body !== undefined
+          ? { 'Content-Type': 'application/json' }
+          : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
-    throw new ApiError('Unable to reach the server. Check your connection and try again.', { code: 'NETWORK' })
+    throw new ApiError(
+      'Unable to reach the server. Check your connection and try again.',
+      { code: 'NETWORK' },
+    )
   }
 
   const json = await res.json().catch(() => null)
+
   if (!res.ok) {
-    // A 401 on a normal data request means the session ended: tell the app to sign out.
-    if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('ff:unauthorized'))
+    // A 401 on a normal data request means the session ended.
+    if (res.status === 401 && !path.startsWith('/auth/')) {
+      window.dispatchEvent(new Event('ff:unauthorized'))
+    }
+
     const err = json?.error
-    throw new ApiError(err?.message || `Request failed (${res.status}).`, { status: res.status, code: err?.code, fields: err?.fields })
+
+    throw new ApiError(
+      err?.message || `Request failed (${res.status}).`,
+      {
+        status: res.status,
+        code: err?.code,
+        fields: err?.fields,
+      },
+    )
   }
+
   return json?.data
 }
 
 // ---------- normalizers: server shape -> UI shape ----------
+
 export const ACCOUNT_TYPE_LABELS = {
   SAVINGS: 'Savings Account',
   CURRENT: 'Current Account',
@@ -50,8 +74,18 @@ export const ACCOUNT_TYPE_LABELS = {
   INVESTMENT: 'Investment Account',
   OTHER: 'Other',
 }
-const ACCOUNT_TYPE_CODES = Object.fromEntries(Object.entries(ACCOUNT_TYPE_LABELS).map(([code, label]) => [label, code]))
-const ACCOUNT_ICONS = { CASH: 'wallet', CREDIT_CARD: 'credit-card' }
+
+const ACCOUNT_TYPE_CODES = Object.fromEntries(
+  Object.entries(ACCOUNT_TYPE_LABELS).map(([code, label]) => [
+    label,
+    code,
+  ]),
+)
+
+const ACCOUNT_ICONS = {
+  CASH: 'wallet',
+  CREDIT_CARD: 'credit-card',
+}
 
 const fromAccount = (a) => ({
   id: a.id,
@@ -76,9 +110,19 @@ const fromTransaction = (t) => ({
   type: t.type,
   amount: t.amount,
   notes: t.notes || '',
+
+  // Preserve the transaction's saved budget-inclusion setting.
+  includeInBudget: t.includeInBudget !== false,
 })
 
-const fromBudget = (b) => ({ id: b.id, category: b.category, limit: b.amount, spent: b.spent, remaining: b.remaining, percentUsed: b.percentUsed })
+const fromBudget = (b) => ({
+  id: b.id,
+  category: b.category,
+  limit: b.amount,
+  spent: b.spent,
+  remaining: b.remaining,
+  percentUsed: b.percentUsed,
+})
 
 const fromGoal = (g) => ({
   id: g.id,
@@ -105,6 +149,7 @@ const fromLoan = (l) => ({
 })
 
 // ---------- UI shape -> server shape ----------
+
 const toTransactionBody = (t) => ({
   type: t.type,
   amount: t.amount,
@@ -113,35 +158,95 @@ const toTransactionBody = (t) => ({
   notes: t.notes || '',
   date: t.date,
   accountId: t.accountId,
+
+  // Send the budget toggle state to the backend.
+  includeInBudget: t.includeInBudget !== false,
 })
 
 // ---------- auth ----------
-export const register = (name, email, password) => request('POST', '/auth/register', { name, email, password }).then((d) => d.user)
-export const login = (email, password) => request('POST', '/auth/login', { email, password }).then((d) => d.user)
+
+export const register = (name, email, password) =>
+  request('POST', '/auth/register', { name, email, password }).then(
+    (d) => d.user,
+  )
+
+export const login = (email, password) =>
+  request('POST', '/auth/login', { email, password }).then(
+    (d) => d.user,
+  )
+
 export const logout = () => request('POST', '/auth/logout')
-export const fetchMe = () => request('GET', '/auth/me').then((d) => d.user)
+
+export const fetchMe = () =>
+  request('GET', '/auth/me').then((d) => d.user)
 
 // ---------- accounts ----------
-export const getAccounts = () => request('GET', '/accounts').then((rows) => rows.map(fromAccount))
+
+export const getAccounts = () =>
+  request('GET', '/accounts').then((rows) => rows.map(fromAccount))
+
 export const createAccount = (a) =>
-  request('POST', '/accounts', { name: a.name, type: ACCOUNT_TYPE_CODES[a.type] || a.type, openingBalance: a.balance }).then(fromAccount)
+  request('POST', '/accounts', {
+    name: a.name,
+    type: ACCOUNT_TYPE_CODES[a.type] || a.type,
+    openingBalance: a.balance,
+  }).then(fromAccount)
+
 export const updateAccount = (id, a) =>
-  request('PUT', `/accounts/${id}`, { name: a.name, type: ACCOUNT_TYPE_CODES[a.type] || a.type, balance: a.balance }).then(fromAccount)
-export const deleteAccount = (id, { force = false } = {}) => request('DELETE', `/accounts/${id}${force ? '?force=true' : ''}`)
+  request('PUT', `/accounts/${id}`, {
+    name: a.name,
+    type: ACCOUNT_TYPE_CODES[a.type] || a.type,
+    balance: a.balance,
+  }).then(fromAccount)
+
+export const deleteAccount = (id, { force = false } = {}) =>
+  request(
+    'DELETE',
+    `/accounts/${id}${force ? '?force=true' : ''}`,
+  )
 
 // ---------- transactions ----------
-export const getTransactions = () => request('GET', '/transactions?limit=5000').then((rows) => rows.map(fromTransaction))
-export const createTransaction = (t) => request('POST', '/transactions', toTransactionBody(t)).then(fromTransaction)
-export const updateTransaction = (id, t) => request('PUT', `/transactions/${id}`, toTransactionBody(t)).then(fromTransaction)
-export const deleteTransaction = (id) => request('DELETE', `/transactions/${id}`)
+
+export const getTransactions = () =>
+  request('GET', '/transactions?limit=5000').then((rows) =>
+    rows.map(fromTransaction),
+  )
+
+export const createTransaction = (t) =>
+  request('POST', '/transactions', toTransactionBody(t)).then(
+    fromTransaction,
+  )
+
+export const updateTransaction = (id, t) =>
+  request('PUT', `/transactions/${id}`, toTransactionBody(t)).then(
+    fromTransaction,
+  )
+
+export const deleteTransaction = (id) =>
+  request('DELETE', `/transactions/${id}`)
 
 // ---------- budgets ----------
-export const getBudgets = () => request('GET', '/budgets').then((rows) => rows.map(fromBudget))
-export const createBudget = (b) => request('POST', '/budgets', { category: b.category, amount: b.limit }).then(fromBudget)
-export const updateBudget = (id, b) => request('PUT', `/budgets/${id}`, { category: b.category, amount: b.limit }).then(fromBudget)
-export const deleteBudget = (id) => request('DELETE', `/budgets/${id}`)
+
+export const getBudgets = () =>
+  request('GET', '/budgets').then((rows) => rows.map(fromBudget))
+
+export const createBudget = (b) =>
+  request('POST', '/budgets', {
+    category: b.category,
+    amount: b.limit,
+  }).then(fromBudget)
+
+export const updateBudget = (id, b) =>
+  request('PUT', `/budgets/${id}`, {
+    category: b.category,
+    amount: b.limit,
+  }).then(fromBudget)
+
+export const deleteBudget = (id) =>
+  request('DELETE', `/budgets/${id}`)
 
 // ---------- goals ----------
+
 const toGoalBody = (g) => ({
   name: g.name,
   targetAmount: g.target,
@@ -149,18 +254,33 @@ const toGoalBody = (g) => ({
   monthlyContribution: g.monthlyContribution ?? 0,
   deadline: g.targetDate || null,
 })
-export const getGoals = () => request('GET', '/goals').then((rows) => rows.map(fromGoal))
-export const createGoal = (g) => request('POST', '/goals', toGoalBody(g)).then(fromGoal)
-export const updateGoal = (id, g) => request('PUT', `/goals/${id}`, toGoalBody(g)).then(fromGoal)
-export const deleteGoal = (id) => request('DELETE', `/goals/${id}`)
+
+export const getGoals = () =>
+  request('GET', '/goals').then((rows) => rows.map(fromGoal))
+
+export const createGoal = (g) =>
+  request('POST', '/goals', toGoalBody(g)).then(fromGoal)
+
+export const updateGoal = (id, g) =>
+  request('PUT', `/goals/${id}`, toGoalBody(g)).then(fromGoal)
+
+export const deleteGoal = (id) =>
+  request('DELETE', `/goals/${id}`)
 
 // ---------- loans ----------
-export const getLoans = () => request('GET', '/loans').then((rows) => rows.map(fromLoan))
+
+export const getLoans = () =>
+  request('GET', '/loans').then((rows) => rows.map(fromLoan))
+
 export const createLoan = (l) =>
   request('POST', '/loans', {
     name: l.name,
     principalAmount: l.principalAmount || l.principal,
-    outstandingAmount: l.outstandingAmount || (l.outstanding === '' || l.outstanding == null ? undefined : l.outstanding),
+    outstandingAmount:
+      l.outstandingAmount ||
+      (l.outstanding === '' || l.outstanding == null
+        ? undefined
+        : l.outstanding),
     interestRate: l.interestRate,
     emiAmount: l.emiAmount || l.emi,
     startDate: l.startDate,
@@ -178,30 +298,55 @@ export const updateLoan = (id, l) =>
     startDate: l.startDate,
     endDate: l.endDate || null,
   }).then(fromLoan)
-  
-export const deleteLoan = (id) => request('DELETE', `/loans/${id}`)
 
-// Marks the loan's next EMI as paid. The server lowers the outstanding principal.
-// If the loan is still active afterwards we schedule the following month's EMI,
-// so "Next payment" keeps showing a date.
+export const deleteLoan = (id) =>
+  request('DELETE', `/loans/${id}`)
+
+// Marks the loan's next EMI as paid.
+// The server lowers the outstanding principal.
+// If the loan is still active, schedule the following month's EMI.
+
 export async function payNextEmi(loan) {
-  const paid = await request('PUT', `/emis/${loan.nextEmiId}`, { status: 'PAID' })
+  const paid = await request('PUT', `/emis/${loan.nextEmiId}`, {
+    status: 'PAID',
+  })
+
   const fresh = await request('GET', `/loans/${loan.id}`)
+
   if (fresh.status === 'ACTIVE' && loan.nextPayment) {
     const next = new Date(`${loan.nextPayment}T00:00:00Z`)
     next.setUTCMonth(next.getUTCMonth() + 1)
-    await request('POST', '/emis', { loanId: loan.id, amount: loan.emi, dueDate: next.toISOString().slice(0, 10) })
+
+    await request('POST', '/emis', {
+      loanId: loan.id,
+      amount: loan.emi,
+      dueDate: next.toISOString().slice(0, 10),
+    })
   }
+
   return paid
 }
 
 // ---------- dashboard ----------
-export const getDashboardSummary = () => request('GET', '/dashboard/summary')
-export const getDashboardAnalytics = (months = 6) => request('GET', `/dashboard/analytics?months=${months}`)
+
+export const getDashboardSummary = () =>
+  request('GET', '/dashboard/summary')
+
+export const getDashboardAnalytics = (months = 6) =>
+  request('GET', `/dashboard/analytics?months=${months}`)
 
 // Loads everything the app needs in parallel.
+
 export async function fetchFinanceData() {
-  const [accounts, transactions, budgets, goals, loans, summary, analytics] = await Promise.all([
+  const [
+    accounts,
+    transactions,
+    budgets,
+    goals,
+    loans,
+    summary,
+    analytics,
+  ] = await Promise.all([
     getAccounts(),
     getTransactions(),
     getBudgets(),
@@ -210,5 +355,14 @@ export async function fetchFinanceData() {
     getDashboardSummary(),
     getDashboardAnalytics(6),
   ])
-  return { accounts, transactions, budgets, goals, loans, summary, analytics }
+
+  return {
+    accounts,
+    transactions,
+    budgets,
+    goals,
+    loans,
+    summary,
+    analytics,
+  }
 }
