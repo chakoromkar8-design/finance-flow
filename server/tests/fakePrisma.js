@@ -8,6 +8,7 @@ const MODELS = [
   'loan',
   'emi',
   'investment',
+  'insurance',
 ]
 
 const DEFAULTS = {
@@ -64,6 +65,17 @@ const DEFAULTS = {
     nextPremiumDate: null,
     notes: null,
   }),
+
+  insurance: () => ({
+    provider: null,
+    policyNumber: null,
+    policyholder: null,
+    endDate: null,
+    renewalDate: null,
+    status: 'ACTIVE',
+    nominee: null,
+    notes: null,
+  }),
 }
 
 const UNIQUE = {
@@ -91,6 +103,7 @@ const FOREIGN = {
   ],
 
   investment: [['userId', 'user']],
+  insurance: [['userId', 'user']],
 }
 
 const prismaError = (code, message) =>

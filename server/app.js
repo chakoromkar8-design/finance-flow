@@ -14,6 +14,7 @@ import { loanRoutes } from './routes/loans.js'
 import { emiRoutes } from './routes/emis.js'
 import { dashboardRoutes } from './routes/dashboard.js'
 import { investmentRoutes } from './routes/investments.js'
+import { insuranceRoutes } from './routes/insurance.js'
 
 // The app is built by a function so tests can hand in a fake database and a
 // test config. index.js hands in the real Prisma client and the real config.
@@ -48,6 +49,7 @@ export function createApp({ prisma, config }) {
   app.use('/api/loans', auth, loanRoutes({ prisma, config }))
   app.use('/api/emis', auth, emiRoutes({ prisma, config }))
   app.use('/api/investments', auth, investmentRoutes({ prisma, config }))
+  app.use('/api/insurance', auth, insuranceRoutes({ prisma, config }))
   app.use('/api/dashboard', auth, dashboardRoutes({ prisma, config }))
     // Serve the built React app from the same server (production)
   const distDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')

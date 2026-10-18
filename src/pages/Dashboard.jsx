@@ -14,11 +14,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-navy-900 dark:text-white">Good morning 👋</h2>
-        <p className="text-sm text-navy-500 dark:text-navy-400 mt-1">Here's your financial overview.</p>
-      </div>
-
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard title="Total Balance" value={totals.totalBalance} icon={Wallet} tone="navy" sub="across all accounts" />
         <StatCard title="Total Income" value={totals.totalIncome} changePct={changes.income ?? undefined} icon={TrendingUp} tone="income" />

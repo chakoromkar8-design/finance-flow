@@ -26,7 +26,9 @@ const NAV_ITEMS = [
   { to: '/budgets', label: 'Budgets', icon: PiggyBank },
   { to: '/goals', label: 'Savings Goals', icon: Target },
   { to: '/loans', label: 'Loans & EMIs', icon: Banknote },
+  { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  
 ]
 
 const INVESTMENT_ITEMS = [

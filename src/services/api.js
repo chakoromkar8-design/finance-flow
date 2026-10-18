@@ -380,3 +380,24 @@ export const updateInvestment = (id, investment) =>
 export const deleteInvestment = (id) =>
   request('DELETE', `/investments/${id}`)
 
+
+ // ---------- insurance ----------
+
+export const getInsurancePolicies = (filters = {}) => {
+  const params = new URLSearchParams()
+
+  if (filters.type) params.set('type', filters.type)
+  if (filters.status) params.set('status', filters.status)
+
+  const query = params.toString()
+  return request('GET', `/insurance${query ? `?${query}` : ''}`)
+}
+
+export const createInsurancePolicy = (policy) =>
+  request('POST', '/insurance', policy)
+
+export const updateInsurancePolicy = (id, policy) =>
+  request('PUT', `/insurance/${id}`, policy)
+
+export const deleteInsurancePolicy = (id) =>
+  request('DELETE', `/insurance/${id}`)

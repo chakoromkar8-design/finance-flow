@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import InsurancePage from './pages/InsurancePage.jsx'
 import InvestmentPage from './pages/InvestmentPage.jsx'
 import AppLayout from './components/layout/AppLayout.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/investments/fd" element={<InvestmentPage />} />
           <Route path="/investments/commodities" element={<InvestmentPage />} />
           <Route path="/investments/lic" element={<InvestmentPage />} />
+          <Route path="/insurance" element={<InsurancePage />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

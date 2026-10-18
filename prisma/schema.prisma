@@ -50,6 +50,30 @@ enum InvestmentStatus {
   CANCELLED
 }
 
+enum InsuranceType {
+  HEALTH
+  LIFE
+  TERM
+  VEHICLE
+  HOME
+  TRAVEL
+  OTHER
+}
+
+enum InsuranceFrequency {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+}
+
+enum InsuranceStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -65,6 +89,7 @@ model User {
   loans        Loan[]
   emis         Emi[]
   investments  Investment[]
+  insurances   Insurance[]
 }
 
 model Account {
@@ -215,4 +240,38 @@ model Investment {
 
   @@index([userId, type])
   @@index([userId, status])
+}
+
+model Insurance {
+  id     String @id @default(cuid())
+  userId String
+
+  name         String
+  type         InsuranceType
+  provider     String
+  policyNumber String
+  policyholder String
+
+  coverageAmount Decimal            @db.Decimal(14, 2)
+  premiumAmount  Decimal            @db.Decimal(14, 2)
+  frequency      InsuranceFrequency
+
+  startDate   DateTime  @db.Date
+  endDate     DateTime? @db.Date
+  renewalDate DateTime? @db.Date
+
+  status InsuranceStatus @default(ACTIVE)
+
+  nominee String?
+  notes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, status])
+  @@index([userId, renewalDate])
 }
