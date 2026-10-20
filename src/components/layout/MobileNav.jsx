@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   X,
   Settings,
@@ -13,20 +13,30 @@ import {
   Banknote,
   Boxes,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react'
 import { NAV_ITEMS, INVESTMENT_ITEMS } from './Sidebar.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 export default function MobileNav({ open, onClose }) {
   const [investmentsOpen, setInvestmentsOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
 
   if (!open) return null
 
-  const isInvestmentRoute =
-    location.pathname.startsWith('/investments')
+  const isInvestmentRoute = location.pathname.startsWith('/investments')
+  const showInvestmentItems = investmentsOpen || isInvestmentRoute
 
-  const showInvestmentItems =
-    investmentsOpen || isInvestmentRoute
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      onClose()
+      navigate('/login')
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -41,9 +51,7 @@ export default function MobileNav({ open, onClose }) {
       {/* Mobile drawer */}
       <aside
         className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto overscroll-contain bg-navy-900 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-white shadow-2xl animate-slide-in-right"
-        style={{
-          WebkitOverflowScrolling: 'touch',
-        }}
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Header */}
         <div className="mb-8 flex shrink-0 items-center justify-between gap-3 px-2">
@@ -110,30 +118,28 @@ export default function MobileNav({ open, onClose }) {
 
           {showInvestmentItems && (
             <div className="ml-4 space-y-1 border-l border-navy-700 pl-3">
-              {INVESTMENT_ITEMS.map(
-                ({ to, label, icon: Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-                        isActive
-                          ? 'bg-brand-500 text-white'
-                          : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-                      }`
-                    }
-                  >
-                    <Icon size={18} strokeWidth={2} />
-                    {label}
-                  </NavLink>
-                ),
-              )}
+              {INVESTMENT_ITEMS.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
+                      isActive
+                        ? 'bg-brand-500 text-white'
+                        : 'text-navy-300 hover:bg-navy-800 hover:text-white'
+                    }`
+                  }
+                >
+                  <Icon size={18} strokeWidth={2} />
+                  {label}
+                </NavLink>
+              ))}
             </div>
           )}
         </nav>
 
-        {/* Settings */}
+        {/* Settings and Logout */}
         <div className="mt-4 shrink-0 space-y-1 border-t border-navy-800 pt-4">
           <NavLink
             to="/settings"
@@ -149,6 +155,15 @@ export default function MobileNav({ open, onClose }) {
             <Settings size={18} strokeWidth={2} />
             Settings
           </NavLink>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-navy-300 transition-colors hover:bg-red-950/40 hover:text-red-400 focus-ring"
+          >
+            <LogOut size={18} strokeWidth={2} />
+            Logout
+          </button>
         </div>
       </aside>
     </div>
