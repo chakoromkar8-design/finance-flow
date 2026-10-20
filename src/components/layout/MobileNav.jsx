@@ -38,6 +38,17 @@ export default function MobileNav({ open, onClose }) {
     }
   }
 
+  const navLinkClass = ({ isActive }) =>
+    `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
+      isActive
+        ? 'bg-brand-500 text-white'
+        : 'text-navy-600 hover:bg-navy-100 hover:text-navy-900 dark:text-navy-300 dark:hover:bg-navy-800 dark:hover:text-white'
+    }`
+
+  const investmentButtonClass = isInvestmentRoute
+    ? 'bg-brand-500 text-white'
+    : 'text-navy-600 hover:bg-navy-100 hover:text-navy-900 dark:text-navy-300 dark:hover:bg-navy-800 dark:hover:text-white'
+
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
       {/* Backdrop */}
@@ -50,15 +61,16 @@ export default function MobileNav({ open, onClose }) {
 
       {/* Mobile drawer */}
       <aside
-        className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto overscroll-contain bg-navy-900 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-white shadow-2xl animate-slide-in-right"
+        className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto overscroll-contain border-r border-navy-200 bg-white px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-navy-900 shadow-2xl animate-slide-in-right dark:border-navy-800 dark:bg-navy-900 dark:text-white"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Header */}
         <div className="mb-8 flex shrink-0 items-center justify-between gap-3 px-2">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
               <Wallet size={18} strokeWidth={2.5} />
             </div>
+
             <span className="truncate text-lg font-bold tracking-tight">
               FinanceFlow
             </span>
@@ -68,7 +80,7 @@ export default function MobileNav({ open, onClose }) {
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="shrink-0 rounded-lg p-2 text-navy-300 hover:bg-navy-800 hover:text-white focus-ring"
+            className="shrink-0 rounded-lg p-2 text-navy-500 hover:bg-navy-100 hover:text-navy-900 focus-ring dark:text-navy-300 dark:hover:bg-navy-800 dark:hover:text-white"
           >
             <X size={22} />
           </button>
@@ -82,13 +94,7 @@ export default function MobileNav({ open, onClose }) {
               to={to}
               end={end}
               onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-                  isActive
-                    ? 'bg-brand-500 text-white'
-                    : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-                }`
-              }
+              className={navLinkClass}
             >
               <Icon size={18} strokeWidth={2} />
               {label}
@@ -100,14 +106,12 @@ export default function MobileNav({ open, onClose }) {
             type="button"
             onClick={() => setInvestmentsOpen((value) => !value)}
             aria-expanded={showInvestmentItems}
-            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-              isInvestmentRoute
-                ? 'bg-brand-500 text-white'
-                : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-            }`}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${investmentButtonClass}`}
           >
             <ChartCandlestick size={18} strokeWidth={2} />
+
             <span className="flex-1 text-left">Investments</span>
+
             <ChevronDown
               size={16}
               className={`transition-transform ${
@@ -117,19 +121,13 @@ export default function MobileNav({ open, onClose }) {
           </button>
 
           {showInvestmentItems && (
-            <div className="ml-4 space-y-1 border-l border-navy-700 pl-3">
+            <div className="ml-4 space-y-1 border-l border-navy-200 pl-3 dark:border-navy-700">
               {INVESTMENT_ITEMS.map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
                   onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-                      isActive
-                        ? 'bg-brand-500 text-white'
-                        : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-                    }`
-                  }
+                  className={navLinkClass}
                 >
                   <Icon size={18} strokeWidth={2} />
                   {label}
@@ -140,17 +138,11 @@ export default function MobileNav({ open, onClose }) {
         </nav>
 
         {/* Settings and Logout */}
-        <div className="mt-4 shrink-0 space-y-1 border-t border-navy-800 pt-4">
+        <div className="mt-4 shrink-0 space-y-1 border-t border-navy-200 pt-4 dark:border-navy-800">
           <NavLink
             to="/settings"
             onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors focus-ring ${
-                isActive
-                  ? 'bg-brand-500 text-white'
-                  : 'text-navy-300 hover:bg-navy-800 hover:text-white'
-              }`
-            }
+            className={navLinkClass}
           >
             <Settings size={18} strokeWidth={2} />
             Settings
@@ -159,7 +151,7 @@ export default function MobileNav({ open, onClose }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-navy-300 transition-colors hover:bg-red-950/40 hover:text-red-400 focus-ring"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-navy-600 transition-colors hover:bg-red-50 hover:text-red-600 focus-ring dark:text-navy-300 dark:hover:bg-red-950/40 dark:hover:text-red-400"
           >
             <LogOut size={18} strokeWidth={2} />
             Logout
