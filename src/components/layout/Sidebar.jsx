@@ -1,6 +1,6 @@
 
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -17,7 +17,9 @@ import {
   CalendarDays,
   ShieldCheck,
   Boxes,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -27,8 +29,7 @@ const NAV_ITEMS = [
   { to: '/goals', label: 'Savings Goals', icon: Target },
   { to: '/loans', label: 'Loans & EMIs', icon: Banknote },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/insurance', label: 'Insurance', icon: ShieldCheck },  
- 
+  { to: '/insurance', label: 'Insurance', icon: ShieldCheck },
 ]
 
 const INVESTMENT_ITEMS = [
@@ -63,9 +64,19 @@ function NavItem({ to, label, icon: Icon, end }) {
 export default function Sidebar() {
   const [investmentsOpen, setInvestmentsOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
 
   const isInvestmentRoute = location.pathname.startsWith('/investments')
   const showInvestmentItems = investmentsOpen || isInvestmentRoute
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      navigate('/login')
+    }
+  }
 
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 bg-white text-navy-900 border-r border-navy-100 px-4 py-6 shadow-sm dark:bg-navy-900 dark:text-white dark:border-navy-800">
@@ -110,6 +121,15 @@ export default function Sidebar() {
 
       <div className="space-y-1 pt-4 border-t border-navy-100 dark:border-navy-800">
         <NavItem to="/settings" label="Settings" icon={Settings} />
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-navy-600 hover:bg-red-50 hover:text-red-600 dark:text-navy-300 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors focus-ring"
+        >
+          <LogOut size={18} strokeWidth={2} />
+          Logout
+        </button>
       </div>
     </aside>
   )
